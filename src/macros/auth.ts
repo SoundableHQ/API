@@ -1,20 +1,64 @@
 import Elysia from "elysia";
+import jwt from "@elysiajs/jwt";
+import config from "~/config";
+import database from "~/database";
+import * as tables from "~/database/schema";
+import { eq } from "drizzle-orm";
 
-export default new Elysia({ name: "auth" }).macro({
-  auth: {
-    async resolve({ status, request: { headers } }) {
-      const auth = headers.get("authorization");
-      const bearer = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+interface TokenPayload {
+  user: string; // => tables.users.id
+}
 
-      if (!bearer)
-        return status(401, {
-          message:
-            "You're trying to access a protected route, you must pass in your bearer token.",
-        });
+export default new Elysia({ name: "auth" })
+  .use(
+    jwt({
+      name: "jwt",
+      secret: config.sessionSecretKey,
+    })
+  )
 
-      return {
-        session: {},
-      };
+  .derive({ as: "scoped" }, ({ jwt }) => ({
+    generateToken(id: string) {
+      return jwt.sign({
+        user: id,
+      } satisfies TokenPayload);
     },
-  },
-});
+  }))
+
+  .macro({
+    auth: {
+      async resolve({ jwt, status, request: { headers } }) {
+        const auth = headers.get("authorization");
+        const bearer = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+
+        if (!bearer)
+          return status(403, {
+            ok: false,
+            code: "PROTECTED_ROUTE",
+          });
+
+        const payload = (await jwt.verify(bearer)) as false | TokenPayload;
+        if (!payload)
+          return status(401, {
+            ok: false,
+            code: "TOKEN_INVALID",
+          });
+
+        const user = database
+          .select()
+          .from(tables.users)
+          .where(eq(tables.users.id, payload.user))
+          .get();
+
+        if (!user)
+          return status(401, {
+            ok: false,
+            code: "NO_ACCOUNT",
+          });
+
+        return {
+          user,
+        };
+      },
+    },
+  });
