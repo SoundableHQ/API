@@ -27,7 +27,7 @@ export const users = table(
      *
      * - Should be less than 200 characters.
      */
-    displayName: text({ length: 200 }),
+    display_name: text({ length: 200 }),
 
     /**
      * Hashed password, hashed using Bun's
@@ -38,15 +38,15 @@ export const users = table(
     /**
      * Timestamp when the user was created.
      */
-    createdAt: integer({ mode: "timestamp" })
+    created_at: integer({ mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
 
     /**
      * Timestamp of the last time the user got updated,
-     * `username`, `displayName` or `password` change.
+     * `username`, `display_name` or `password` change.
      */
-    updatedAt: integer({ mode: "timestamp" })
+    updated_at: integer({ mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`)
       .$onUpdate(() => sql`(unixepoch())`),
