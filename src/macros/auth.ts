@@ -32,14 +32,14 @@ export default new Elysia({ name: "auth" })
         const bearer = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
 
         if (!bearer)
-          return status(403, {
+          throw status(403, {
             ok: false,
             code: "PROTECTED_ROUTE",
           });
 
         const payload = (await jwt.verify(bearer)) as false | TokenPayload;
         if (!payload)
-          return status(401, {
+          throw status(401, {
             ok: false,
             code: "TOKEN_INVALID",
           });
@@ -51,7 +51,7 @@ export default new Elysia({ name: "auth" })
           .get();
 
         if (!user)
-          return status(401, {
+          throw status(401, {
             ok: false,
             code: "NO_ACCOUNT",
           });

@@ -14,7 +14,7 @@ export default new Elysia({ prefix: "auth" })
     "/sign-up",
     async ({ body, status, generateToken }) => {
       if (!config.allowSignUp)
-        return status(400, {
+        throw status(400, {
           ok: false,
           code: "SIGN_UP_DISALLOWED",
         });
@@ -29,7 +29,7 @@ export default new Elysia({ prefix: "auth" })
           .get();
 
         if (user)
-          return status(400, {
+          throw status(400, {
             ok: false,
             code: "USERNAME_ALREADY_TAKEN",
           });
@@ -49,10 +49,10 @@ export default new Elysia({ prefix: "auth" })
 
         const token = await generateToken(user.id);
 
-        return status(200, {
+        return {
           ok: true,
           token,
-        });
+        };
       } catch {
         throw status(500, {
           ok: false,
@@ -77,23 +77,23 @@ export default new Elysia({ prefix: "auth" })
         .get();
 
       if (!user)
-        return status(400, {
+        throw status(400, {
           ok: false,
           code: "NO_ACCOUNT",
         });
 
       if (!(await Bun.password.verify(body.password, user.password)))
-        return status(403, {
+        throw status(403, {
           ok: false,
           code: "PASSWORD_INVALID",
         });
 
       const token = await generateToken(user.id);
 
-      return status(200, {
+      return {
         ok: true,
         token,
-      });
+      };
     },
     {
       body: t.Object({

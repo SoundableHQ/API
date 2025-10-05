@@ -1,10 +1,11 @@
-import Elysia from "elysia";
+import Elysia, { status } from "elysia";
 import cors from "@elysiajs/cors";
 import auth from "~/routers/auth";
 import config from "~/config";
 import pkg from "../package.json";
 import { memoryUsage } from "bun:jsc";
 import { swagger } from "@elysiajs/swagger";
+import { ElysiaCustomStatusResponse, ValidationError } from "elysia/error";
 
 new Elysia()
   .use(
@@ -29,11 +30,14 @@ new Elysia()
     })
   )
 
-  .onError(({ code }) => {
-    return {
-      ok: false,
-      code,
-    };
+  .onError(({ error, code }) => {
+    if (code === "VALIDATION") {
+      return {
+        ok: false,
+        code,
+        errors: error.all.map((detail) => detail.summary),
+      };
+    }
   })
 
   .get("/", ({ server }) => ({
