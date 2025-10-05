@@ -2,8 +2,8 @@ const bool = (envValue: string | undefined, defaultValue: boolean): boolean => {
   envValue = envValue?.toLowerCase();
 
   if (envValue) {
-    if (envValue === "true") return true;
-    else if (envValue === "false") return false;
+    if (envValue.trim() === "true") return true;
+    else if (envValue.trim() === "false") return false;
   }
 
   return defaultValue;
